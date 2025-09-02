@@ -26,10 +26,9 @@ public class PaymentService {
 
         if (data.unitPrice().compareTo(BigDecimal.ZERO) == 0)
             throw new NegativeQuantityException("Unit price must be greater or equal than 1");
-
         return paymentGateway.createCheckoutSession(
             data,
-            "https://youtube.com"
+            "http://localhost:8080/order/list"
         );
     }
 
