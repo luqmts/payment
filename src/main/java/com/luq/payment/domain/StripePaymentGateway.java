@@ -6,6 +6,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,13 +20,15 @@ public class StripePaymentGateway{
             .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
             .setMode(SessionCreateParams.Mode.PAYMENT)
             .setSuccessUrl(successUrl)
+            .setClientReferenceId(request.orderId())
+            .setExpiresAt((System.currentTimeMillis() / 1000L) + 1800)
             .addLineItem(
                 SessionCreateParams.LineItem.builder()
                 .setQuantity(request.quantity().longValue())
                 .setPriceData(
                     SessionCreateParams.LineItem.PriceData.builder()
                     .setCurrency("brl")
-                    .setUnitAmount(request.unitPrice().longValue())
+                    .setUnitAmount(request.unitPrice().multiply(BigDecimal.valueOf(100)).longValue())
                     .setProductData(
                         SessionCreateParams.LineItem.PriceData.ProductData.builder()
                             .setName(request.product_name())
