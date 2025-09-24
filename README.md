@@ -1,7 +1,7 @@
 [JAVA_BADGE]:https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white
 [SPRING_BADGE]: https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white
 [KAFKA_BADGE]: https://img.shields.io/badge/Apache_Kafka-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white
-<h1 align="center" style="font-weight: bold;">Sales Management</h1>
+<h1 align="center" style="font-weight: bold;">Payment</h1>
 
 ![kafka][KAFKA_BADGE]
 ![java][JAVA_BADGE]
