@@ -6,5 +6,5 @@ public record PaymentRequestDTO (
     String orderId,
     BigDecimal unitPrice,
     Integer quantity,
-    String product_name
+    String productName
 ){}
