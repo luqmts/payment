@@ -3,6 +3,8 @@ package com.luq.payment.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.luq.payment.domain.StripePaymentGateway;
 import com.luq.payment.dto.PaymentStatusDTO;
+import com.luq.payment.exceptions.InvalidJsonException;
+import com.luq.payment.exceptions.NotFoundException;
 import com.luq.payment.services.PaymentProducer;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/webhook")
 public class StripeWebhookController {
-
     @Autowired
     private PaymentProducer paymentProducer;
     @Autowired
@@ -31,31 +32,37 @@ public class StripeWebhookController {
     @PostMapping("/stripe")
     public ResponseEntity<String> handleStripeEvent(
         @RequestBody String payload,
-        @RequestHeader("Stripe-Signature") String sigHeader) throws JsonProcessingException {
+        @RequestHeader("Stripe-Signature") String sigHeader) {
         Event event;
 
         try {
             event = Webhook.constructEvent(payload, sigHeader, ENDPOINT_SECRET);
         } catch (SignatureVerificationException e) {
             return ResponseEntity
-                    .status(400)
-                    .body("Webhook error: " + e.getMessage());
+                .status(400)
+                .body("Webhook error: " + e.getMessage());
         }
 
-        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (session != null) {
-            String orderId = session.getClientReferenceId();
-            if ("checkout.session.completed".equals(event.getType())) {
-                PaymentStatusDTO paymentStatusDTO = new PaymentStatusDTO(Integer.parseInt(orderId), "PAID");
-                System.out.println("success: " + paymentStatusDTO);
-                paymentProducer.sendPaymentStatus(paymentStatusDTO);
-            }
+        Session session = (Session) event
+            .getDataObjectDeserializer()
+            .getObject()
+            .orElseThrow(() -> new NotFoundException("Session not found"));
 
-            if ("checkout.session.expired".equals(event.getType())) {
-                PaymentStatusDTO paymentStatusDTO = new PaymentStatusDTO(Integer.parseInt(orderId), "EXPIRED_PAYMENT");
-                System.out.println("expire: " + paymentStatusDTO);
-                paymentProducer.sendPaymentStatus(paymentStatusDTO);
+        try {
+            if (session != null) {
+                String orderId = session.getClientReferenceId();
+                if ("checkout.session.completed".equals(event.getType())) {
+                    PaymentStatusDTO paymentStatusDTO = new PaymentStatusDTO(Integer.parseInt(orderId), "PAID");
+                    paymentProducer.sendPaymentStatus(paymentStatusDTO);
+                }
+
+                if ("checkout.session.expired".equals(event.getType())) {
+                    PaymentStatusDTO paymentStatusDTO = new PaymentStatusDTO(Integer.parseInt(orderId), "EXPIRED_PAYMENT");
+                    paymentProducer.sendPaymentStatus(paymentStatusDTO);
+                }
             }
+        } catch (JsonProcessingException ex){
+            throw new InvalidJsonException("Invalid json on stripe's webhook: " + ex.getMessage());
         }
 
         return ResponseEntity.ok("Received");
